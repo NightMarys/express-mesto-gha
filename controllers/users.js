@@ -1,23 +1,27 @@
 const User = require('../models/user');
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.find({})
     .then((users) => res.status(200).send(users))
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
 };
 
 module.exports.getUserById = (req, res) => {
   const { userId } = req.params;
   User.findById(userId)
-    .then((user) => res.status(200).send(user))
+    .then((user) => {
+      if (!user) {
+        res.status(404).json({ message: 'Нет пользователя с таким id' });
+      } else {
+        res.status(200).send({ data: user });
+      }
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные.' });
+        res.status(400).json({ message: 'Переданы некорректные данные.' });
+      } else {
+        res.status(500).json({ message: 'На сервере произошла ошибка' });
       }
-      if (err.name === 'NotFoundError') {
-        return res.status(404).send({ message: 'Пользователь по указанному id не найден.' });
-      }
-      return res.status(500).send({ message: 'На сервере произошла ошибка' });
     });
 };
 
