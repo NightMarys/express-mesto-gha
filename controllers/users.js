@@ -41,16 +41,20 @@ module.exports.updateProfile = (req, res) => {
 
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
     .then((user) => {
-      res.status(200).send(user);
+      if (!user) {
+        res.status(404).json({ message: 'Пользователь с указанным id не найден.' });
+      } else {
+        res.status(200).send({ data: user });
+      }
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля.' });
-      }
       if (err.name === 'NotFoundError') {
-        return res.status(404).send({ message: 'Пользователь с указанным id не найден.' });
+        res.status(400).json({ message: 'Пользователь с указанным id не найден.' });
+      } else if (err.name === 'ValidationError') {
+        res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля.' });
+      } else {
+        res.status(500).json({ message: 'На сервере произошла ошибка' });
       }
-      return res.status(500).send({ message: 'На сервере произошла ошибка' });
     });
 };
 
@@ -60,15 +64,19 @@ module.exports.updateAvatar = (req, res) => {
 
   User.findByIdAndUpdate(owner, { avatar }, { new: true })
     .then((user) => {
-      res.status(200).send(user);
+      if (!user) {
+        res.status(404).json({ message: 'Пользователь с указанным id не найден.' });
+      } else {
+        res.status(200).send({ data: user });
+      }
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении аватара.' });
-      }
       if (err.name === 'NotFoundError') {
-        return res.status(404).send({ message: 'Пользователь с указанным id не найден.' });
+        res.status(400).json({ message: 'Пользователь с указанным id не найден.' });
+      } else if (err.name === 'ValidationError') {
+        res.status(400).json({ message: 'Переданы некорректные данные при обновлении аватара.' });
+      } else {
+        res.status(500).json({ message: 'На сервере произошла ошибка' });
       }
-      return res.status(500).send({ message: 'На сервере произошла ошибка' });
     });
 };
