@@ -21,12 +21,12 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
         throw new NotFoundError('Карточка с указанным id не найдена.');
       }
-      res.send({ data: card });
+      Card.deleteOne(card).then(res.send(card));
     })
     .catch(next);
 };
