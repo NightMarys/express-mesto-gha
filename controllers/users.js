@@ -1,82 +1,70 @@
 const User = require('../models/user');
+const NotFoundError = require('../errors/NotFoundError');
+const ValidationError = require('../errors/ValidationError');
 
 module.exports.getUser = (req, res, next) => {
   User.find({})
-    .then((users) => res.status(200).send(users))
+    .then((users) => res.send(users))
     .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        res.status(404).json({ message: 'Нет пользователя с таким id' });
-      } else {
-        res.status(200).send({ data: user });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
+      res.send({ data: user });
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).json({ message: 'Переданы некорректные данные.' });
-      } else {
-        res.status(500).json({ message: 'На сервере произошла ошибка' });
-      }
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
   User.create({ name, about, avatar })
-    .then((user) => res.status(200).send({ user }))
+    .then((user) => res.send({ user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Переданы некорректные данные при создании пользователя.' });
-      } else { res.status(500).send({ message: 'На сервере произошла ошибка' }); }
+        next(new ValidationError('Переданы некорректные данные при создании пользователя.'));
+      } else { next(err); }
     });
 };
 
-module.exports.updateProfile = (req, res) => {
+module.exports.updateProfile = (req, res, next) => {
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
     .then((user) => {
       if (!user) {
-        res.status(404).json({ message: 'Пользователь с указанным id не найден.' });
-      } else {
-        res.status(200).send({ data: user });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
+      res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
-        res.status(400).json({ message: 'Пользователь с указанным id не найден.' });
-      } else if (err.name === 'ValidationError') {
-        res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля.' });
+      if (err.name === 'ValidationError') {
+        next(new ValidationError('Переданы некорректные данные при обновлении профиля.'));
       } else {
-        res.status(500).json({ message: 'На сервере произошла ошибка' });
+        next(err);
       }
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
-  const owner = req.user._id;
-  const avatar = req.body;
+module.exports.updateAvatar = (req, res, next) => {
+  const { avatar } = req.body;
 
-  User.findByIdAndUpdate(owner, { avatar }, { new: true })
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true })
     .then((user) => {
       if (!user) {
-        res.status(404).json({ message: 'Пользователь с указанным id не найден.' });
-      } else {
-        res.status(200).send({ data: user });
+        throw new NotFoundError('Нет пользователя с таким id');
       }
+      res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
-        res.status(400).json({ message: 'Пользователь с указанным id не найден.' });
-      } else if (err.name === 'ValidationError') {
-        res.status(400).json({ message: 'Переданы некорректные данные при обновлении аватара.' });
+      if (err.name === 'ValidationError') {
+        next(new ValidationError('Переданы некорректные данные при обновлении аватара.'));
       } else {
-        res.status(500).json({ message: 'На сервере произошла ошибка' });
+        next(err);
       }
     });
 };

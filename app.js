@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 
@@ -20,5 +21,21 @@ mongoose.connect('mongodb://localhost:27017/mestodb');
 
 app.use('/', require('./routes/cards'));
 app.use('/', require('./routes/users'));
+
+app.use('/*', () => {
+  throw new NotFoundError('Страница не найдена');
+});
+
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    })
+    .catch(next);
+});
 
 app.listen(PORT);
