@@ -28,7 +28,13 @@ module.exports.deleteCard = (req, res, next) => {
       }
       Card.deleteOne(card).then(res.send(card));
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationError('Переданы некорректные данные при удалении карточки.'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.likeCard = (req, res, next) => {
