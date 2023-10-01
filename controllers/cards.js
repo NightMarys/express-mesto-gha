@@ -26,7 +26,7 @@ module.exports.deleteCard = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Карточка с указанным id не найдена.');
       }
-      Card.deleteOne(card).then(res.send(card));
+      return Card.deleteOne(card).then(() => res.send(card));
     })
     .catch((err) => {
       if (err.name === 'CastError') {
