@@ -7,7 +7,7 @@ const auth = require('./middlewares/auth');
 const { createUser, login } = require('./controllers/users');
 const NotFoundError = require('./errors/NotFoundError');
 
-const { PORT = 3000, BASE_PATH } = process.env;
+const { PORT = 3000 } = process.env;
 
 const app = express();
 
@@ -52,13 +52,10 @@ app.use((err, req, res, next) => {
     .status(statusCode)
     .send({
       message: statusCode === 500
-        ? 'На сервере произошла ошибка'
+        ? 'На сервере произошла ошибка!'
         : message,
     })
     .catch(next);
 });
 
-app.listen(PORT, () => {
-  console.log('Ссылка на сервер:');
-  console.log(BASE_PATH);
-});
+app.listen(PORT);
