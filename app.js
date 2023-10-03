@@ -1,3 +1,4 @@
+/*
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -7,14 +8,17 @@ const auth = require('./middlewares/auth');
 const { createUser, login } = require('./controllers/users');
 const NotFoundError = require('./errors/NotFoundError');
 
-const { PORT = 3000 } = process.env;
+const {
+  PORT = 3000,
+  MONGO_URL = 'mongodb://localhost:27017/mestodb',
+} = process.env;
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect('mongodb://localhost:27017/mestodb');
+mongoose.connect(MONGO_URL);
 
 app.use(cors());
 
@@ -22,7 +26,7 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string().regex(/https?:\/\/(\w{3}\.)?[1-9a-z\-.]{1,}\w\w(\/[1-90a-z.,_@%&?+=~/-]{1,}\/?)?#?/),
+    avatar: Joi.string().regex(/^(https?:\/\/)?([\da-z.-]+).([a-z.]{2,6})([/\w.-]*)*\/?$/),
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),
@@ -54,8 +58,53 @@ app.use((err, req, res, next) => {
       message: statusCode === 500
         ? 'На сервере произошла ошибка!'
         : message,
-    })
-    .catch(next);
+    });
+  next();
+});
+
+app.listen(PORT);
+*/
+const express = require('express');
+
+const mongoose = require('mongoose');
+
+const bodyParser = require('body-parser');
+const { createUser, login } = require('./controllers/users');
+const auth = require('./middlewares/auth');
+const NotFoundError = require('./errors/NotFoundError');
+
+const { PORT = 3000 } = process.env;
+
+const app = express();
+
+app.use(bodyParser.json());
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+mongoose.connect('mongodb://localhost:27017/mestodb');
+
+app.post('/signup', createUser);
+app.post('/signin', login);
+
+app.use(auth);
+
+app.use('/', require('./routes/cards'));
+app.use('/', require('./routes/users'));
+
+app.use('/*', () => {
+  throw new NotFoundError('Страница не найдена');
+});
+
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+  return next(err);
 });
 
 app.listen(PORT);
